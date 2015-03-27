@@ -13,6 +13,7 @@ type Client struct {
 	GetUrl       string
 	Stories string
 	Motd     string
+	Search string
 }
 
 func NewClient() *Client {
@@ -22,9 +23,10 @@ func NewClient() *Client {
 		os.Exit(1)
 	}
 	var c = Client{
-		GetUrl:       "https://api-news.layervault.com/api/v1/%s?client_id=" + client_id,
-		Stories: "stories",
-		Motd: "motd",
+		GetUrl:       "https://api-news.layervault.com/api/v1/%sclient_id=" + client_id,
+		Stories: "stories?",
+		Motd: "motd?",
+		Search: "stories/search?query=%s&",
 	}
 	return &c
 }
@@ -73,12 +75,29 @@ func (c *Client) GetMotd() (Motd, error) {
 	return motd, err
 }
 
-// func main() {
-// 	c := NewClient()
-// 	s, _ := c.GetStories()
-// 	for _, element := range s.Stories {
-// 		fmt.Printf("%d %s %s %s %d\n", element.VoteCount, element.Title, element.Url, element.SiteUrl, len(element.Comments))
-// 	}
-// 	m, _ := c.GetMotd()
-// 	fmt.Printf("%+v\n", m)
-// }
+func (c *Client) GetSearch(search string) (Stories, error) {
+	query := url.QueryEscape(search)
+	value := fmt.Sprintf(c.Search, query)
+	url := fmt.Sprintf(c.GetUrl, value)
+	rep, err := c.Get(url, nil)
+	var stories Stories
+	if err != nil {
+		return stories, err
+	}
+	err = json.Unmarshal(rep, &stories)
+	return stories, err
+}
+
+func main() {
+	c := NewClient()
+	s, _ := c.GetStories()
+	for _, element := range s.Stories {
+		fmt.Printf("%d %s %s %s %d\n", element.VoteCount, element.Title, element.Url, element.SiteUrl, len(element.Comments))
+	}
+	m, _ := c.GetMotd()
+	fmt.Printf("%+v\n", m)
+	s, _ = c.GetSearch("Product Hunt")
+	for _, element := range s.Stories {
+		fmt.Printf("%d %s %s %s %d\n", element.VoteCount, element.Title, element.Url, element.SiteUrl, len(element.Comments))
+	}
+}
