@@ -10,9 +10,9 @@ import (
 )
 
 type Client struct {
-	BaseUrl       string
-	StoriesSuffix string
-	ClientId      string
+	GetUrl       string
+	Stories string
+	Motd     string
 }
 
 func NewClient() *Client {
@@ -22,15 +22,16 @@ func NewClient() *Client {
 		os.Exit(1)
 	}
 	var c = Client{
-		BaseUrl:       "https://api-news.layervault.com/api/v1/",
-		StoriesSuffix: "stories",
-		ClientId:      "?client_id=" + client_id,
+		GetUrl:       "https://api-news.layervault.com/api/v1/%s?client_id=" + client_id,
+		Stories: "stories",
+		Motd: "motd",
 	}
 	return &c
 }
 
 func (c *Client) Get(url string, params url.Values) ([]byte, error) {
 	httpClient := &http.Client{}
+	fmt.Printf("%s\n", url)
 	req, err := http.NewRequest("GET", url, nil)
 
 	// make the request
@@ -49,7 +50,7 @@ func (c *Client) Get(url string, params url.Values) ([]byte, error) {
 }
 
 func (c *Client) GetStories() (Stories, error) {
-	url := c.BaseUrl + c.StoriesSuffix + c.ClientId
+	url := fmt.Sprintf(c.GetUrl, c.Stories)
 	rep, err := c.Get(url, nil)
 	var stories Stories
 	if err != nil {
@@ -59,10 +60,25 @@ func (c *Client) GetStories() (Stories, error) {
 	return stories, err
 }
 
+func (c *Client) GetMotd() (Motd, error) {
+	url := fmt.Sprintf(c.GetUrl, c.Motd)
+	rep, err := c.Get(url, nil)
+	var wrapper MotdWrapper
+	var motd Motd
+	if err != nil {
+		return motd, err
+	}
+	err = json.Unmarshal(rep, &wrapper)
+	motd = wrapper.Motd
+	return motd, err
+}
+
 // func main() {
 // 	c := NewClient()
 // 	s, _ := c.GetStories()
 // 	for _, element := range s.Stories {
 // 		fmt.Printf("%d %s %s %s %d\n", element.VoteCount, element.Title, element.Url, element.SiteUrl, len(element.Comments))
 // 	}
+// 	m, _ := c.GetMotd()
+// 	fmt.Printf("%+v\n", m)
 // }
